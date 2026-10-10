@@ -105,7 +105,25 @@
 
 - テーブル・カラム・制約・インデックスの具体的な定義。
 - APIのエンドポイント、リクエスト・レスポンス形式、エラー形式。
-- パスワードハッシュ方式とパラメーター。
-- セッションの有効期限とCookieのSameSite設定値。
-- ログイン試行制限、CSRF対策、二重登録防止の具体的な方式。
+- 認証以外の更新APIの二重登録防止の具体的な方式。
 - 入力値の範囲・文字数制限とページング方式。
+
+## 11. 認証の詳細設計
+
+- パスワードは`node:crypto`のscrypt（N=16384、r=8、p=5、32byte出力）で保護する。16byteのランダムsaltを毎回生成し、方式バージョン・salt・ハッシュを保存する。照合には`timingSafeEqual`を使う。
+- この構成は[OWASPの推奨パラメーター](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)に従う。[Workers無料枠のCPU上限](https://developers.cloudflare.com/workers/platform/limits/)への適合は本番計測が必要であり、現時点で保証しない。必要に応じて認証の構成・プランを見直し、ハッシュ強度を下げて回避しない。
+- Cookie名は`macho_session`。HttpOnly、Secure、SameSite=Strict、Path=/、Max-Age=604800を設定し、Domainは指定しない。ローカルHTTP開発時のみSecureを無効にする。
+- トークンは32byteの暗号学的乱数とし、DBにはSHA-256ハッシュだけを保存する。復元時に期限を検証し、セッション発行時に期限切れの行を削除する。
+- `users`はログインIDとパスワードハッシュ、`sessions`はトークンハッシュ・ログインID・有効期限、`login_attempts`はハッシュ化した制限キー・試行回数・窓の終了時刻を保持する。
+- 試行回数は接続元IP・ログインIDそれぞれについてD1のUPSERTで原子的に加算する。15分間で10回を超えた場合は429を返す。存在しないIDでもダミーハッシュを照合し、認証失敗の応答は共通にする。
+- 更新系APIはOriginヘッダーとリクエストURLのオリジンの一致を必須にする。Vite開発時は同一オリジンのプロキシを使う。
+- CLIは操作対象を明示し、パスワードは非表示で確認入力する。再設定と全セッション失効はSQLファイルをWranglerへ渡し、D1のトランザクションとして実行する。ハッシュを引数・結果へ出力せず、保護した一時ファイルは終了時に削除する。
+- 認証APIは`Cache-Control: no-store`を返す。エラー形式は`{ error: string }`に統一し、想定外の内部エラーの詳細は返さない。
+
+| エンドポイント | 入出力 |
+| --- | --- |
+| POST /api/auth/login | `{ loginId, password }` → `{ user: { loginId } }`、セッションCookie発行 |
+| GET /api/auth/session | 有効セッション → `{ user: { loginId } }`、無効なら401 |
+| POST /api/auth/logout | 該当セッション失効とCookie削除 → `{ ok: true }` |
+
+不正入力400、認証失敗401、Origin不一致403、試行制限429、内部エラー500。

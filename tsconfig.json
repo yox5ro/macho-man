@@ -29,6 +29,9 @@
     "server/src",
     "shared",
     "vite.config.ts",
+    "vitest.config.ts",
+    "drizzle.config.ts",
+    "scripts",
     "*.d.ts"
   ]
 }

@@ -16,21 +16,34 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "deploy": "wrangler deploy --minify",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "wrangler d1 migrations apply macho-man --local",
+    "user": "node --experimental-strip-types scripts/user.ts"
   },
   "dependencies": {
+    "drizzle-orm": "^0.45.4",
+    "hono": "^4.13.13",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "hono": "^4.13.13"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261010.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "drizzle-kit": "^0.31.11",
+    "jsdom": "^29.1.1",
+    "miniflare": "^5.20261006.1-alpha",
     "oxlint": "^1.81.0",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
+    "vitest": "^5.0.3",
     "wrangler": "^4.110.0"
   }
 }
