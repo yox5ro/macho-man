@@ -16,3 +16,13 @@ logs/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Generated deployment config and Terraform local artifacts
+.wrangler.production.json
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+crash.log
