@@ -65,7 +65,7 @@ npm run build
 npm run build:server
 ```
 
-フォーマット修正は`npm run format`で行います。
+フォーマット修正は`npm run format`で行います。Oxfmtを使用し、TypeScript/JavaScript、JSON/JSONC、YAML、Markdown、HTML、CSSを検証します。Terraform/HCLは`terraform fmt`で整形します。Prettierの直接依存はありませんが、HTMLなど一部の形式はOxfmt同梱のPrettierで処理します。
 
 テストにはMiniflareによるローカルD1統合テストが含まれます。`build:server`はデプロイせずにWorkerをビルドします。`client/dist`と`server/dist`に成果物を出力します。
 
