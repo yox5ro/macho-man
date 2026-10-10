@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { AuthUser } from '../../shared/auth'
+import { newPasswordSchema } from '../../shared/auth'
 import { authApi, ApiError } from './auth-api'
 import './App.css'
 
@@ -34,6 +35,10 @@ function App() {
   async function login(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
     if (busy) return
+    if (!newPasswordSchema.safeParse(password).success) {
+      setError('パスワードは4〜1024文字で指定してください。')
+      return
+    }
     setBusy(true)
     setError('')
     try {
@@ -100,7 +105,6 @@ function App() {
             type="password"
             autoComplete="current-password"
             required
-            maxLength={128}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={busy}

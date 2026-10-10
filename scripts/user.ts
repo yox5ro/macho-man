@@ -98,9 +98,9 @@ try {
   }
   let sql = 'SELECT login_id FROM users ORDER BY login_id;'
   if (command !== 'list') {
-    const password = await hiddenInput('パスワード（12〜128文字）: ')
+    const password = await hiddenInput('パスワード（4〜1024文字）: ')
     if (!newPasswordSchema.safeParse(password).success)
-      throw new Error('パスワードは12〜128文字で指定してください。')
+      throw new Error('パスワードは4〜1024文字で指定してください。')
     if (password !== (await hiddenInput('確認: ')))
       throw new Error('パスワードが一致しません。')
     const hash = await hashPassword(password)

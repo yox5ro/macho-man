@@ -47,3 +47,37 @@ it('shows a connection error when session restoration fails', async () => {
     'ログイン状態を確認できませんでした',
   )
 })
+
+it('accepts long passwords without truncating them', async () => {
+  vi.mocked(authApi.session).mockRejectedValue(
+    new ApiError('ログインしてください。', 401),
+  )
+  vi.mocked(authApi.login).mockResolvedValue({ user: { loginId: 'tester' } })
+  const user = userEvent.setup()
+  const password = 'a'.repeat(1024)
+  render(<App />)
+
+  await user.type(await screen.findByLabelText('ログインID'), 'tester')
+  await user.click(screen.getByLabelText('パスワード'))
+  await user.paste(password)
+  await user.click(screen.getByRole('button', { name: 'ログイン' }))
+
+  expect(authApi.login).toHaveBeenCalledWith('tester', password)
+})
+
+it('rejects passwords shorter than four characters before sending', async () => {
+  vi.mocked(authApi.session).mockRejectedValue(
+    new ApiError('ログインしてください。', 401),
+  )
+  const user = userEvent.setup()
+  render(<App />)
+
+  await user.type(await screen.findByLabelText('ログインID'), 'tester')
+  await user.type(screen.getByLabelText('パスワード'), 'abc')
+  await user.click(screen.getByRole('button', { name: 'ログイン' }))
+
+  expect((await screen.findByRole('alert')).textContent).toContain(
+    '4〜1024文字',
+  )
+  expect(authApi.login).not.toHaveBeenCalled()
+})

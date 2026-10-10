@@ -110,3 +110,11 @@ describe('authentication API', () => {
     ).toBe(429)
   })
 })
+
+it('compares the full 1024-character password, including its last character', async () => {
+  const password = 'a'.repeat(1024)
+  const hash = await hashPassword(password)
+
+  expect(await verifyPassword(password, hash)).toBe(true)
+  expect(await verifyPassword('a'.repeat(1023) + 'b', hash)).toBe(false)
+})

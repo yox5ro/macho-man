@@ -110,6 +110,7 @@
 
 ## 11. 認証の詳細設計
 
+- パスワードの長さは共有Zodスキーマで4〜1024文字に検証し、画面・API・CLIで同じスキーマを使う。Unicodeコードポイントで数え、HTMLのUTF-16単位のmaxlengthによる切り詰めは行わない。
 - パスワードは`node:crypto`のscrypt（N=16384、r=8、p=5、32byte出力）で保護する。16byteのランダムsaltを毎回生成し、方式バージョン・salt・ハッシュを保存する。照合には`timingSafeEqual`を使う。
 - この構成は[OWASPの推奨パラメーター](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)に従う。[Workers無料枠のCPU上限](https://developers.cloudflare.com/workers/platform/limits/)への適合は本番計測が必要であり、現時点で保証しない。必要に応じて認証の構成・プランを見直し、ハッシュ強度を下げて回避しない。
 - Cookie名は`macho_session`。HttpOnly、Secure、SameSite=Strict、Path=/、Max-Age=604800を設定し、Domainは指定しない。ローカルHTTP開発時のみSecureを無効にする。
