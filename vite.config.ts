@@ -5,5 +5,13 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   root: 'client',
   plugins: [react()],
-  server: { proxy: { '/api': 'http://localhost:8787' } },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8787',
+        // OriginとHostの一致を使うCSRF検証のため、画面側のHostを保持する。
+        changeOrigin: false,
+      },
+    },
+  },
 })
