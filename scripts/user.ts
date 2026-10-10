@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { hashPassword } from '../server/src/auth/model.ts'
@@ -27,6 +27,13 @@ if (
   )
   process.exit(1)
 }
+
+if (remote && !existsSync('.wrangler.production.json')) {
+  console.error('本番操作の前に npm run deploy:prepare を実行してください。')
+  process.exit(1)
+}
+
+const configArgs = remote ? ['--config', '.wrangler.production.json'] : []
 
 function hiddenInput(prompt: string): Promise<string> {
   if (!process.stdin.isTTY) throw new Error('対話端末から実行してください。')
@@ -73,6 +80,7 @@ try {
         'execute',
         'macho-man',
         remote ? '--remote' : '--local',
+        ...configArgs,
         '--command',
         `SELECT login_id FROM users WHERE login_id=${quote(id!)};`,
         '--json',
@@ -120,6 +128,7 @@ try {
         'execute',
         'macho-man',
         remote ? '--remote' : '--local',
+        ...configArgs,
         ...(command === 'list' ? ['--command', sql] : ['--file', file]),
         '--json',
       ],

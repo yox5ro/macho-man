@@ -15,14 +15,16 @@
     "build:server": "wrangler deploy --dry-run --outdir server/dist",
     "lint": "oxlint",
     "preview": "vite preview",
-    "deploy": "wrangler deploy --minify",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply macho-man --local",
     "user": "node --experimental-strip-types scripts/user.ts",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "deploy:prepare": "node scripts/prepare-production.ts",
+    "db:migrate:remote": "wrangler d1 migrations apply macho-man --remote --config .wrangler.production.json",
+    "deploy:upload": "wrangler versions upload --config .wrangler.production.json --minify"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",

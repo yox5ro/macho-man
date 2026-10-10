@@ -60,7 +60,7 @@
 - Cloudflareの認証情報はHCP TerraformのSensitive環境変数、GitHubのsecrets、運営者のCLI実行環境で管理する。リポジトリに保存しない。
 - Drizzle KitでSQLマイグレーションを生成し、内容を確認してバージョン管理する。Wranglerでローカル・本番のD1に適用する。
 
-### CI/CD・構成管理（CDは後続変更で導入）
+### CI/CD・構成管理
 
 - PRとmain pushでLint、Prettierのフォーマットチェック、テスト、型チェック、フロントとWorkerのビルドを行う。Terraformのfmt/validateもCIで検証する。
 - Cloudflareのzone、D1、Worker本体、workers.dev/previewの設定、Custom Domainは`infra`のTerraformで管理する。HCP TerraformのVCS workspace（作業ディレクトリ`infra`）でremote executionとstate管理を利用し、plan確認後に画面で手動applyする。auto applyは無効にする。

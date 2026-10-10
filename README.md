@@ -42,15 +42,18 @@ npm run db:migrate
 
 Drizzle Kitで生成した`server/migrations`のSQLを確認し、バージョン管理します。
 
-本番の構成は`infra`のTerraformで定義し、HCP Terraformの画面でplanを確認して手動applyします。フロント/APIは1つのWorkerとD1を使います。GitHub repo、DNS、HCP workspace、認証情報の準備は[本番セットアップ手順](infra/README.md)を参照してください。資源作成・applyはまだ行っていません。
+本番の構成は`infra`のTerraformで定義し、HCP Terraformの画面でplanを確認して手動applyします。フロント/APIは1つのWorkerとD1を使います。初回構築、DNS、HCP workspace、GitHub secretsの設定は[本番セットアップ手順](infra/README.md)を参照してください。実際の資源作成と配信はまだ行っていません。
 
-ローカル用`wrangler.jsonc`のD1 IDは仮IDです。本番資源を手動作成したり仮IDで配信したりせず、HCPから構築してください。アプリの配信と本番CLIの設定取得は後続のCD段階で導入します。
+ローカル用`wrangler.jsonc`には仮のD1 IDを残しています。本番設定はActionsがTerraformの適用済みoutputから生成するため、仮IDを本番へ使いません。運営用CLIで本番を操作する端末では、認証情報とworkspace IDを環境変数に設定して`npm run deploy:prepare`を実行してください。CLIは`--remote`時に生成済み`.wrangler.production.json`を使います。
+
+## CI/CD
+
+- PRとmainへのpushでLint・フォーマットチェック・テスト・型チェック・フロント/Workerのビルドを実行します。
+- Terraform導入後は`fmt`と`validate`もCIで検証します。plan/applyはHCP Terraformで行い、applyは管理者が手動で開始します。
+- 本番CDを有効化すると、main pushのCIがすべて成功した後に、同じコミットの成果物を使いD1マイグレーションとアプリ配信を行います。PRは配信しません。
+- `ENABLE_PRODUCTION_DEPLOY`は初回インフラ構築まで未設定にします。CI→Terraform→CDの順で導入でき、CD導入だけで未設定環境へ配信は走りません。
 
 安全なパスワード検証にはCPU時間が必要です。Workers無料枠のCPU制限内で動くことは未検証のため、本番で計測し、必要なら認証処理の構成やプランを見直してください。ハッシュ強度を下げて回避しません。
-
-## CI・構成管理
-
-PRとmainへのpushでLint、フォーマットチェック、テスト、型チェック、フロント/Workerのビルドを実行します。Node.js 24と`npm ci`を使い、失敗した場合はCIが失敗します。Terraformのfmt・validate・mockテストもCIで検証します。Cloudflareへの自動配信は次の段階で導入します。
 
 ## 確認
 
