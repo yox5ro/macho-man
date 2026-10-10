@@ -62,7 +62,7 @@
 
 ### CI/CD・構成管理（CDは後続変更で導入）
 
-- PRとmain pushでLint、Prettierのフォーマットチェック、テスト、型チェック、フロントとWorkerのビルドを行う。Terraformのfmt/validateもCIで検証する。
+- PRとmain pushでLint、Oxfmtのフォーマットチェック、テスト、型チェック、フロントとWorkerのビルドを行う。Terraformのfmt/validateもCIで検証する。
 - Cloudflareのzone、D1、Worker本体、workers.dev/previewの設定、Custom Domainは`infra`のTerraformで管理する。HCP TerraformのVCS workspace（作業ディレクトリ`infra`）でremote executionとstate管理を利用し、plan確認後に画面で手動applyする。auto applyは無効にする。
 - 本番のD1/ASSETS binding、互換設定、SPA/API配信設定はTerraformの`wrangler_config` outputで定義する。ActionsはHCPの適用済みoutputを読み、本番用Wrangler設定を生成する。ローカル用の仮D1 IDを本番へ使用しない。
 - TerraformのWorker resourceは本体だけを管理し、コードのversion/deploymentは管理しない。Actionsは`versions upload/deploy`でアプリと静的アセットを配信し、routes/triggersは変更しない。Cloudflare provider 5.27.0のWorker resourceはbetaである。
@@ -112,6 +112,8 @@
 - `client`と`server`は`shared`を参照できるが、互いの内部実装を直接参照しない。`shared`はどちらにも依存しない。
 - DBスキーマ、認証処理、秘密情報、Cloudflareのbindingに依存する処理は`server`に置き、クライアントのビルドへ含めない。
 - TDDの進め方とコード・テスト・コメントの記述方針は[AGENTS.md](AGENTS.md)に従う。
+- フォーマットはOxfmtを使用し、80文字幅・セミコロンなし・シングルクォートを維持する。Terraform/HCLはTerraform fmtで整形する。
+- 外部GitHub Actionsは最新安定リリースの完全な40桁commit SHAへ固定し、コメントに対応するパッチバージョンを記載する。
 
 ## 10. 詳細設計で決定する事項
 

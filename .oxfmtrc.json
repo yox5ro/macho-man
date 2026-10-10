@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "semi": false,
+  "singleQuote": true,
+  "printWidth": 80,
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "node_modules/",
+    "**/dist/",
+    ".wrangler/",
+    ".terraform/",
+    "package-lock.json",
+    "server/migrations/meta/",
+    ".wrangler.production.json"
+  ]
+}
