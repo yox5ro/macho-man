@@ -53,14 +53,21 @@ npm run deploy
 
 安全なパスワード検証にはCPU時間が必要です。Workers無料枠のCPU制限内で動くことは未検証のため、本番で計測し、必要なら認証処理の構成やプランを見直してください。ハッシュ強度を下げて回避しません。
 
+## CI
+
+PRとmainへのpushでLint、フォーマットチェック、テスト、型チェック、フロント/Workerのビルドを実行します。Node.js 24と`npm ci`を使い、失敗した場合はCIが失敗します。Cloudflareへの自動配信は次の段階で導入します。
+
 ## 確認
 
 ```sh
 npm test
 npm run lint
+npm run format:check
 npm run build
 npm run build:server
 ```
+
+フォーマット修正は`npm run format`で行います。
 
 テストにはMiniflareによるローカルD1統合テストが含まれます。`build:server`はデプロイせずにWorkerをビルドします。`client/dist`と`server/dist`に成果物を出力します。
 
