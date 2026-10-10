@@ -62,7 +62,7 @@
 
 ### CI
 
-- PRとmain pushでLint、Prettierのフォーマットチェック、テスト、型チェック、フロントとWorkerのビルドを行う。Node.js 24とルートのロックファイルを使用する。
+- PRとmain pushでLint、Oxfmtのフォーマットチェック、テスト、型チェック、フロントとWorkerのビルドを行う。Node.js 24とルートのロックファイルを使用する。
 - Workerは`node:crypto`を使う認証処理のため`nodejs_compat`を有効にしてビルドする。
 - CIでmainのフロント成果物を7日間保存する。Cloudflareへの自動配信は後続の変更で導入する。
 
@@ -106,6 +106,8 @@
 - `client`と`server`は`shared`を参照できるが、互いの内部実装を直接参照しない。`shared`はどちらにも依存しない。
 - DBスキーマ、認証処理、秘密情報、Cloudflareのbindingに依存する処理は`server`に置き、クライアントのビルドへ含めない。
 - TDDの進め方とコード・テスト・コメントの記述方針は[AGENTS.md](AGENTS.md)に従う。
+- フォーマットはOxfmtを使用し、80文字幅・セミコロンなし・シングルクォートを維持する。Terraform/HCLはTerraform fmtで整形する。
+- 外部GitHub Actionsは最新安定リリースの完全な40桁commit SHAへ固定し、コメントに対応するパッチバージョンを記載する。
 
 ## 10. 詳細設計で決定する事項
 
