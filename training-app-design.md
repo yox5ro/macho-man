@@ -4,17 +4,17 @@
 
 ## 1. システム構成
 
-| 要素 | 採用構成 |
-| --- | --- |
-| フロントエンド | React |
-| バックエンド | Hono on Cloudflare Workers |
-| 静的アセット配信 | Workers Static Assets |
-| データベース | Cloudflare D1 |
-| ORM | Drizzle ORM（D1ドライバー） |
-| 入力検証 | Zod |
-| デプロイ単位 | フロントエンドとAPIを1つのWorkerで提供 |
-| 運営者向け操作 | ローカル実行するCLI。Wrangler経由でD1を操作 |
-| ドメイン | `macho-man.yox5ro.net`（`yox5ro.net`は取得済み） |
+| 要素             | 採用構成                                         |
+| ---------------- | ------------------------------------------------ |
+| フロントエンド   | React                                            |
+| バックエンド     | Hono on Cloudflare Workers                       |
+| 静的アセット配信 | Workers Static Assets                            |
+| データベース     | Cloudflare D1                                    |
+| ORM              | Drizzle ORM（D1ドライバー）                      |
+| 入力検証         | Zod                                              |
+| デプロイ単位     | フロントエンドとAPIを1つのWorkerで提供           |
+| 運営者向け操作   | ローカル実行するCLI。Wrangler経由でD1を操作      |
+| ドメイン         | `macho-man.yox5ro.net`（`yox5ro.net`は取得済み） |
 
 アプリとAPIは同一オリジンとする。アプリは `https://macho-man.yox5ro.net`、APIは `/api/*`。
 
@@ -60,6 +60,12 @@
 - Cloudflareの認証情報は運営者のローカル環境で管理する。
 - Drizzle KitでSQLマイグレーションを生成し、内容を確認してバージョン管理する。Wranglerでローカル・本番のD1に適用する。
 
+### CI
+
+- PRとmain pushでLint、Oxfmtのフォーマットチェック、テスト、型チェック、フロントとWorkerのビルドを行う。Node.js 24とルートのロックファイルを使用する。
+- Workerは`node:crypto`を使う認証処理のため`nodejs_compat`を有効にしてビルドする。
+- CIでmainのフロント成果物を7日間保存する。Cloudflareへの自動配信は後続の変更で導入する。
+
 ## 7. クライアント設計
 
 - 画面を責務ごとのcomponentに分割する。画面固有のcomponentと複数画面で利用する共通componentを区別し、過度な細分化や先回りした共通化は避ける。
@@ -76,12 +82,12 @@
 
 基本構成はrouter、handler、model、repositoryとし、責務を次のように分ける。
 
-| 層 | 責務 |
-| --- | --- |
-| router | URL・HTTPメソッドとhandlerの対応、middlewareの適用を定義する |
-| handler | 検証済み入力と認証ユーザーを受け取り、modelとrepositoryを組み合わせて処理を進め、HTTPレスポンスを返す |
-| model | ドメインの型・ルール・計算・状態変換を定義する。HonoやD1へ依存せず、可能な限り副作用のない関数で構成する |
-| repository | Drizzleを使ったDBの取得・保存と、複数行の操作の原子性を担う |
+| 層         | 責務                                                                                                     |
+| ---------- | -------------------------------------------------------------------------------------------------------- |
+| router     | URL・HTTPメソッドとhandlerの対応、middlewareの適用を定義する                                             |
+| handler    | 検証済み入力と認証ユーザーを受け取り、modelとrepositoryを組み合わせて処理を進め、HTTPレスポンスを返す    |
+| model      | ドメインの型・ルール・計算・状態変換を定義する。HonoやD1へ依存せず、可能な限り副作用のない関数で構成する |
+| repository | Drizzleを使ったDBの取得・保存と、複数行の操作の原子性を担う                                              |
 
 - 認証、CSRF対策、入力検証、共通のエラー処理はmiddleware等に集約する。入力形式の検証と、所有権・関連データの状態などDBを必要とする検証を区別する。
 - repositoryのユーザー所有データに対する操作は、認証されたユーザーIDを必須の条件とし、関連IDの所有権も確認する。
@@ -100,6 +106,8 @@
 - `client`と`server`は`shared`を参照できるが、互いの内部実装を直接参照しない。`shared`はどちらにも依存しない。
 - DBスキーマ、認証処理、秘密情報、Cloudflareのbindingに依存する処理は`server`に置き、クライアントのビルドへ含めない。
 - TDDの進め方とコード・テスト・コメントの記述方針は[AGENTS.md](AGENTS.md)に従う。
+- フォーマットはOxfmtを使用し、80文字幅・セミコロンなし・シングルクォートを維持する。Terraform/HCLはTerraform fmtで整形する。
+- 外部GitHub Actionsは最新安定リリースの完全な40桁commit SHAへ固定し、コメントに対応するパッチバージョンを記載する。
 
 ## 10. 詳細設計で決定する事項
 
@@ -121,10 +129,10 @@
 - CLIは操作対象を明示し、パスワードは非表示で確認入力する。再設定と全セッション失効はSQLファイルをWranglerへ渡し、D1のトランザクションとして実行する。ハッシュを引数・結果へ出力せず、保護した一時ファイルは終了時に削除する。
 - 認証APIは`Cache-Control: no-store`を返す。エラー形式は`{ error: string }`に統一し、想定外の内部エラーの詳細は返さない。
 
-| エンドポイント | 入出力 |
-| --- | --- |
-| POST /api/auth/login | `{ loginId, password }` → `{ user: { loginId } }`、セッションCookie発行 |
-| GET /api/auth/session | 有効セッション → `{ user: { loginId } }`、無効なら401 |
-| POST /api/auth/logout | 該当セッション失効とCookie削除 → `{ ok: true }` |
+| エンドポイント        | 入出力                                                                  |
+| --------------------- | ----------------------------------------------------------------------- |
+| POST /api/auth/login  | `{ loginId, password }` → `{ user: { loginId } }`、セッションCookie発行 |
+| GET /api/auth/session | 有効セッション → `{ user: { loginId } }`、無効なら401                   |
+| POST /api/auth/logout | 該当セッション失効とCookie削除 → `{ ok: true }`                         |
 
 不正入力400、認証失敗401、Origin不一致403、試行制限429、内部エラー500。

@@ -53,14 +53,21 @@ npm run deploy
 
 安全なパスワード検証にはCPU時間が必要です。Workers無料枠のCPU制限内で動くことは未検証のため、本番で計測し、必要なら認証処理の構成やプランを見直してください。ハッシュ強度を下げて回避しません。
 
+## CI
+
+PRとmainへのpushでLint、フォーマットチェック、テスト、型チェック、フロント/Workerのビルドを実行します。Node.js 24と`npm ci`を使い、失敗した場合はCIが失敗します。Cloudflareへの自動配信は次の段階で導入します。
+
 ## 確認
 
 ```sh
 npm test
 npm run lint
+npm run format:check
 npm run build
 npm run build:server
 ```
+
+フォーマット修正は`npm run format`で行います。Oxfmtを使用し、TypeScript/JavaScript、JSON/JSONC、YAML、Markdown、HTML、CSSを検証します。Terraform/HCLは`terraform fmt`で整形します。Prettierの直接依存はありませんが、HTMLなど一部の形式はOxfmt同梱のPrettierで処理します。
 
 テストにはMiniflareによるローカルD1統合テストが含まれます。`build:server`はデプロイせずにWorkerをビルドします。`client/dist`と`server/dist`に成果物を出力します。
 

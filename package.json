@@ -20,7 +20,9 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "wrangler d1 migrations apply macho-man --local",
-    "user": "node --experimental-strip-types scripts/user.ts"
+    "user": "node --experimental-strip-types scripts/user.ts",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check ."
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",
@@ -40,6 +42,7 @@
     "drizzle-kit": "^0.31.11",
     "jsdom": "^29.1.1",
     "miniflare": "^5.20261006.1-alpha",
+    "oxfmt": "0.72.0",
     "oxlint": "^1.81.0",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
