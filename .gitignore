@@ -26,3 +26,6 @@ logs/
 *.tfvars
 *.tfvars.json
 crash.log
+*.tfbackend.json
+*.tfplan.gpg
+*.tflock
