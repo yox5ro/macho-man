@@ -60,7 +60,7 @@
 - Cloudflareの認証情報は保護されたGitHub Environmentのsecrets、運営者のCLI実行環境で管理する。リポジトリに保存しない。
 - Drizzle KitでSQLマイグレーションを生成し、内容を確認してバージョン管理する。Wranglerでローカル・本番のD1に適用する。
 
-### CI/CD・構成管理（CDは後続変更で導入）
+### CI/CD・構成管理
 
 - PRとmain pushでLint、Oxfmtのフォーマットチェック、テスト、型チェック、フロントとWorkerのビルドを行う。Terraformのfmt/validateもCIで検証する。
 - Cloudflareのzone、D1、Worker本体、workers.dev/previewの設定、Custom Domainは`infra`のTerraformで管理する。ローカルでplanを確認し、同じ保存済みplanを手動applyする。stateは非公開R2のS3 backendで管理し、`use_lockfile=true`を維持する。ローカルapply前にCDを無効化し、進行中の配信が完了したことを確認する。
