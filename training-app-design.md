@@ -63,7 +63,7 @@
 ### CI/CD・構成管理（CDは後続変更で導入）
 
 - PRとmain pushでLint、Oxfmtのフォーマットチェック、テスト、型チェック、フロントとWorkerのビルドを行う。Terraformのfmt/validateもCIで検証する。
-- Cloudflareのzone、D1、Worker本体、workers.dev/previewの設定、Custom Domainは`infra`のTerraformで管理する。GitHub Actionsで手動planを実行し、確認した保存済みplanを手動applyする。stateは非公開R2のS3 backendで管理し、`use_lockfile=true`と共通concurrencyで直列化する。
+- Cloudflareのzone、D1、Worker本体、workers.dev/previewの設定、Custom Domainは`infra`のTerraformで管理する。ローカルでplanを確認し、同じ保存済みplanを手動applyする。stateは非公開R2のS3 backendで管理し、`use_lockfile=true`を維持する。ローカルapply前にCDを無効化し、進行中の配信が完了したことを確認する。
 - 本番のD1/ASSETS binding、互換設定、SPA/API配信設定はTerraformの`wrangler_config` outputで定義する。ActionsはR2 stateの適用済みoutputを読み、本番用Wrangler設定を生成する。ローカル用の仮D1 IDを本番へ使用しない。
 - TerraformのWorker resourceは本体だけを管理し、コードのversion/deploymentは管理しない。Actionsは`versions upload/deploy`でアプリと静的アセットを配信し、routes/triggersは変更しない。Cloudflare provider 5.27.0のWorker resourceはbetaである。
 - main pushのCI全成功を条件に別の配信workflowを起動する。CIで生成した同じコミットのフロント成果物を使用し、D1マイグレーション成功後に新しいWorker versionを100%へ切り替える。配信は同時実行せず、古いmainコミットは開始時にスキップする。
