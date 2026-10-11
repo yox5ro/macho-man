@@ -57,14 +57,20 @@
 
 - Workers 1つ、D1 1つを基本構成とする。
 - 運営用CLIはローカルで実行し、Wrangler経由でD1を操作する。
-- Cloudflareの認証情報は運営者のローカル環境で管理する。
+- Cloudflareの認証情報は保護されたGitHub Environmentのsecrets、運営者のCLI実行環境で管理する。リポジトリに保存しない。
 - Drizzle KitでSQLマイグレーションを生成し、内容を確認してバージョン管理する。Wranglerでローカル・本番のD1に適用する。
 
-### CI
+### CI/CD・構成管理（CDは後続変更で導入）
 
-- PRとmain pushでLint、Oxfmtのフォーマットチェック、テスト、型チェック、フロントとWorkerのビルドを行う。Node.js 24とルートのロックファイルを使用する。
-- Workerは`node:crypto`を使う認証処理のため`nodejs_compat`を有効にしてビルドする。
-- CIでmainのフロント成果物を7日間保存する。Cloudflareへの自動配信は後続の変更で導入する。
+- PRとmain pushでLint、Oxfmtのフォーマットチェック、テスト、型チェック、フロントとWorkerのビルドを行う。Terraformのfmt/validateもCIで検証する。
+- Cloudflareのzone、D1、Worker本体、workers.dev/previewの設定、Custom Domainは`infra`のTerraformで管理する。ローカルでplanを確認し、同じ保存済みplanを手動applyする。stateは非公開R2のS3 backendで管理し、`use_lockfile=true`を維持する。ローカルapply前にCDを無効化し、進行中の配信が完了したことを確認する。
+- 本番のD1/ASSETS binding、互換設定、SPA/API配信設定はTerraformの`wrangler_config` outputで定義する。ActionsはR2 stateの適用済みoutputを読み、本番用Wrangler設定を生成する。ローカル用の仮D1 IDを本番へ使用しない。
+- TerraformのWorker resourceは本体だけを管理し、コードのversion/deploymentは管理しない。Actionsは`versions upload/deploy`でアプリと静的アセットを配信し、routes/triggersは変更しない。Cloudflare provider 5.27.0のWorker resourceはbetaである。
+- main pushのCI全成功を条件に別の配信workflowを起動する。CIで生成した同じコミットのフロント成果物を使用し、D1マイグレーション成功後に新しいWorker versionを100%へ切り替える。配信は同時実行せず、古いmainコミットは開始時にスキップする。
+- CI、Terraform、CDの順に別の変更として導入する。配信はrepository variable `ENABLE_PRODUCTION_DEPLOY=true`で初回構築後に有効化する。Cloudflare Workers Buildsによる別系統の配信は有効化しない。
+- Terraform applyで変更したバージョン設定は次のアプリ配信時に反映する。インフラとアプリを段階的に変更し、Terraformの手動applyとActionsの配信を同時に実行しない。
+- マイグレーションは旧アプリとも互換性を保つ。コード配信の失敗やロールバックでDBは自動的に戻らない。
+- 初回のアカウント・認証情報・DNS委任・R2/GitHub設定は[本番セットアップ手順](infra/README.md)に記載する。
 
 ## 7. クライアント設計
 

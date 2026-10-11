@@ -42,20 +42,15 @@ npm run db:migrate
 
 Drizzle Kitで生成した`server/migrations`のSQLを確認し、バージョン管理します。
 
-本番用D1はまだ作成していません。`wrangler.jsonc`の`database_id`はローカル開発用の仮IDです。本番利用時はD1を作成し、実際のIDへ置き換えてから実行してください。
+本番の構成は`infra`のTerraformで定義し、ローカルでplanを確認して保存済みplanを手動applyします。stateは非公開R2に保存し、ロックを有効にします。フロント/APIは1つのWorkerとD1を使います。GitHub repo、DNS、R2 state bucket、認証情報の準備は[本番セットアップ手順](infra/README.md)を参照してください。資源作成・applyはまだ行っていません。
 
-```sh
-npx wrangler d1 create macho-man
-npx wrangler d1 migrations apply macho-man --remote
-npm run build
-npm run deploy
-```
+ローカル用`wrangler.jsonc`のD1 IDは仮IDです。本番資源を手動作成したり仮IDで配信したりせず、ローカルのTerraformから構築してください。アプリの配信と本番CLIの設定取得は後続のCD段階で導入します。
 
 安全なパスワード検証にはCPU時間が必要です。Workers無料枠のCPU制限内で動くことは未検証のため、本番で計測し、必要なら認証処理の構成やプランを見直してください。ハッシュ強度を下げて回避しません。
 
-## CI
+## CI・構成管理
 
-PRとmainへのpushでLint、フォーマットチェック、テスト、型チェック、フロント/Workerのビルドを実行します。Node.js 24と`npm ci`を使い、失敗した場合はCIが失敗します。Cloudflareへの自動配信は次の段階で導入します。
+PRとmainへのpushでLint、フォーマットチェック、テスト、型チェック、フロント/Workerのビルドを実行します。Node.js 24と`npm ci`を使い、失敗した場合はCIが失敗します。Terraformのfmt・validate・mockテストもCIで検証します。Cloudflareへの自動配信は次の段階で導入します。
 
 ## 確認
 
