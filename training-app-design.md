@@ -57,20 +57,20 @@
 
 - Workers 1つ、D1 1つを基本構成とする。
 - 運営用CLIはローカルで実行し、Wrangler経由でD1を操作する。
-- Cloudflareの認証情報はHCP TerraformのSensitive環境変数、GitHubのsecrets、運営者のCLI実行環境で管理する。リポジトリに保存しない。
+- Cloudflareの認証情報は保護されたGitHub Environmentのsecrets、運営者のCLI実行環境で管理する。リポジトリに保存しない。
 - Drizzle KitでSQLマイグレーションを生成し、内容を確認してバージョン管理する。Wranglerでローカル・本番のD1に適用する。
 
 ### CI/CD・構成管理
 
 - PRとmain pushでLint、Oxfmtのフォーマットチェック、テスト、型チェック、フロントとWorkerのビルドを行う。Terraformのfmt/validateもCIで検証する。
-- Cloudflareのzone、D1、Worker本体、workers.dev/previewの設定、Custom Domainは`infra`のTerraformで管理する。HCP TerraformのVCS workspace（作業ディレクトリ`infra`）でremote executionとstate管理を利用し、plan確認後に画面で手動applyする。auto applyは無効にする。
-- 本番のD1/ASSETS binding、互換設定、SPA/API配信設定はTerraformの`wrangler_config` outputで定義する。ActionsはHCPの適用済みoutputを読み、本番用Wrangler設定を生成する。ローカル用の仮D1 IDを本番へ使用しない。
+- Cloudflareのzone、D1、Worker本体、workers.dev/previewの設定、Custom Domainは`infra`のTerraformで管理する。GitHub Actionsで手動planを実行し、確認した保存済みplanを手動applyする。stateは非公開R2のS3 backendで管理し、`use_lockfile=true`と共通concurrencyで直列化する。
+- 本番のD1/ASSETS binding、互換設定、SPA/API配信設定はTerraformの`wrangler_config` outputで定義する。ActionsはR2 stateの適用済みoutputを読み、本番用Wrangler設定を生成する。ローカル用の仮D1 IDを本番へ使用しない。
 - TerraformのWorker resourceは本体だけを管理し、コードのversion/deploymentは管理しない。Actionsは`versions upload/deploy`でアプリと静的アセットを配信し、routes/triggersは変更しない。Cloudflare provider 5.27.0のWorker resourceはbetaである。
 - main pushのCI全成功を条件に別の配信workflowを起動する。CIで生成した同じコミットのフロント成果物を使用し、D1マイグレーション成功後に新しいWorker versionを100%へ切り替える。配信は同時実行せず、古いmainコミットは開始時にスキップする。
 - CI、Terraform、CDの順に別の変更として導入する。配信はrepository variable `ENABLE_PRODUCTION_DEPLOY=true`で初回構築後に有効化する。Cloudflare Workers Buildsによる別系統の配信は有効化しない。
 - Terraform applyで変更したバージョン設定は次のアプリ配信時に反映する。インフラとアプリを段階的に変更し、Terraformの手動applyとActionsの配信を同時に実行しない。
 - マイグレーションは旧アプリとも互換性を保つ。コード配信の失敗やロールバックでDBは自動的に戻らない。
-- 初回のアカウント・認証情報・DNS委任・HCP/GitHub設定は[本番セットアップ手順](infra/README.md)に記載する。
+- 初回のアカウント・認証情報・DNS委任・R2/GitHub設定は[本番セットアップ手順](infra/README.md)に記載する。
 
 ## 7. クライアント設計
 

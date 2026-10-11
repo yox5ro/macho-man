@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { z } from 'zod'
 
 const productionConfig = z
@@ -19,36 +20,32 @@ const productionConfig = z
   })
   .passthrough()
 
-export async function loadProductionConfig(
-  workspace: string,
-  token: string,
-  fetcher: typeof fetch = fetch,
-) {
-  if (!/^ws-[a-zA-Z0-9]+$/.test(workspace) || !token)
-    throw new Error('HCP_WORKSPACE_ID and HCP_TERRAFORM_TOKEN are required')
-
-  const response = await fetcher(
-    `https://app.terraform.io/api/v2/workspaces/${workspace}/current-state-version-outputs`,
+const readAppliedOutput = () =>
+  execFileSync(
+    'terraform',
+    ['-chdir=infra', 'output', '-json', 'wrangler_config'],
     {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/vnd.api+json',
-      },
-      signal: AbortSignal.timeout(30_000),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: 30_000,
     },
   )
-  if (!response.ok)
-    throw new Error(
-      `HCP Terraform outputs request failed: HTTP ${response.status}`,
-    )
-  const payload = (await response.json()) as {
-    data: { attributes: { name: string; sensitive: boolean; value: unknown } }[]
+
+export async function loadProductionConfig(
+  account: string,
+  readOutput: () => string = readAppliedOutput,
+) {
+  if (!/^[a-f0-9]{32}$/.test(account))
+    throw new Error('A valid Cloudflare account is required')
+
+  let output: unknown
+  try {
+    output = JSON.parse(readOutput())
+  } catch {
+    throw new Error('Cannot read applied Terraform configuration')
   }
-  const output = payload.data.find(
-    ({ attributes }) => attributes.name === 'wrangler_config',
-  )
-  const parsed = productionConfig.safeParse(output?.attributes.value)
-  if (output?.attributes.sensitive || !parsed.success)
+  const parsed = productionConfig.safeParse(output)
+  if (!parsed.success || parsed.data.account_id !== account)
     throw new Error(
       'Apply the Terraform configuration before deploying: invalid wrangler_config output',
     )

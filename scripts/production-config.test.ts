@@ -1,56 +1,50 @@
 import { expect, it, vi } from 'vitest'
 import { loadProductionConfig } from './production-config'
 
+const account = 'a'.repeat(32)
 const config = {
   name: 'macho-man',
-  account_id: 'a'.repeat(32),
+  account_id: account,
   d1_databases: [
     { binding: 'DB', database_id: '12345678-1234-4234-8234-123456789abc' },
   ],
 }
 
-const outputs = (value: unknown) => ({
-  data: [{ attributes: { name: 'wrangler_config', sensitive: false, value } }],
+it('reads the applied configuration from state', async () => {
+  const reader = vi.fn().mockReturnValue(JSON.stringify(config))
+  expect(await loadProductionConfig(account, reader)).toEqual(config)
+  expect(reader).toHaveBeenCalledOnce()
 })
 
-it('reads the applied configuration without requesting a plan or apply', async () => {
-  const fetcher = vi.fn().mockResolvedValue(Response.json(outputs(config)))
-  expect(
-    await loadProductionConfig('ws-example', 'private-token', fetcher),
-  ).toEqual(config)
-  expect(fetcher).toHaveBeenCalledOnce()
-  expect(fetcher.mock.calls[0][0]).toBe(
-    'https://app.terraform.io/api/v2/workspaces/ws-example/current-state-version-outputs',
+it('stops before reading state when the account is missing', async () => {
+  const reader = vi.fn()
+  await expect(loadProductionConfig('', reader)).rejects.toThrow('account')
+  expect(reader).not.toHaveBeenCalled()
+})
+
+it('does not expose command errors containing credentials or state', async () => {
+  const reader = vi.fn(() => {
+    throw new Error('private-token')
+  })
+  await expect(loadProductionConfig(account, reader)).rejects.toThrow(
+    'Cannot read applied Terraform configuration',
   )
-})
-
-it('stops before contacting HCP when credentials are missing', async () => {
-  const fetcher = vi.fn()
-  await expect(loadProductionConfig('', '', fetcher)).rejects.toThrow('HCP')
-  expect(fetcher).not.toHaveBeenCalled()
-})
-
-it('does not expose API error bodies containing credentials', async () => {
-  const fetcher = vi
-    .fn()
-    .mockResolvedValue(new Response('private-token', { status: 403 }))
-  await expect(
-    loadProductionConfig('ws-example', 'private-token', fetcher),
-  ).rejects.toThrow('HTTP 403')
 })
 
 it.each([
   undefined,
-  { ...config, account_id: '' },
+  { ...config, account_id: 'b'.repeat(32) },
   {
     ...config,
     d1_databases: [
       { binding: 'DB', database_id: '00000000-0000-0000-0000-000000000000' },
     ],
   },
-])('rejects missing or placeholder deployment configuration', async (value) => {
-  const fetcher = vi.fn().mockResolvedValue(Response.json(outputs(value)))
-  await expect(
-    loadProductionConfig('ws-example', 'private-token', fetcher),
-  ).rejects.toThrow()
-})
+])(
+  'rejects missing, mismatched or placeholder configuration',
+  async (value) => {
+    await expect(
+      loadProductionConfig(account, () => JSON.stringify(value)),
+    ).rejects.toThrow()
+  },
+)

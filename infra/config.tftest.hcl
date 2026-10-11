@@ -3,7 +3,8 @@ mock_provider "cloudflare" {
 }
 
 variables {
-  account_id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  account_id        = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  state_bucket_name = "private-state"
 }
 
 override_resource {
@@ -14,8 +15,19 @@ override_resource {
   }
 }
 
+override_resource {
+  target          = cloudflare_r2_bucket.state
+  override_during = plan
+  values          = { id = "private-state" }
+}
+
 run "bootstrap_without_public_domain" {
   command = plan
+
+  assert {
+    condition     = !cloudflare_r2_managed_domain.state.enabled
+    error_message = "Terraform state must not be published on r2.dev."
+  }
 
   assert {
     condition     = length(cloudflare_workers_custom_domain.app) == 0

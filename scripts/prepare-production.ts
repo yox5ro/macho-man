@@ -6,17 +6,11 @@ try {
     throw new Error(
       'CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are required',
     )
-  const config = await loadProductionConfig(
-    process.env.HCP_WORKSPACE_ID ?? '',
-    process.env.HCP_TERRAFORM_TOKEN ?? '',
-  )
-  if (config.account_id !== process.env.CLOUDFLARE_ACCOUNT_ID)
-    throw new Error(
-      'Cloudflare account does not match the applied Terraform configuration',
-    )
+  const config = await loadProductionConfig(process.env.CLOUDFLARE_ACCOUNT_ID)
   await writeFile(
     '.wrangler.production.json',
     `${JSON.stringify(config, null, 2)}\n`,
+    { mode: 0o600 },
   )
 } catch (error) {
   console.error(

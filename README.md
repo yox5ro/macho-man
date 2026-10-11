@@ -42,14 +42,14 @@ npm run db:migrate
 
 Drizzle Kitで生成した`server/migrations`のSQLを確認し、バージョン管理します。
 
-本番の構成は`infra`のTerraformで定義し、HCP Terraformの画面でplanを確認して手動applyします。フロント/APIは1つのWorkerとD1を使います。初回構築、DNS、HCP workspace、GitHub secretsの設定は[本番セットアップ手順](infra/README.md)を参照してください。実際の資源作成と配信はまだ行っていません。
+本番の構成は`infra`のTerraformで定義し、GitHub Actionsでplanを確認して手動applyします。stateは非公開R2に保存し、ロックを有効にします。フロント/APIは1つのWorkerとD1を使います。初回構築、DNS、R2 state bucket、GitHub secretsの設定は[本番セットアップ手順](infra/README.md)を参照してください。実際の資源作成と配信はまだ行っていません。
 
-ローカル用`wrangler.jsonc`には仮のD1 IDを残しています。本番設定はActionsがTerraformの適用済みoutputから生成するため、仮IDを本番へ使いません。運営用CLIで本番を操作する端末では、認証情報とworkspace IDを環境変数に設定して`npm run deploy:prepare`を実行してください。CLIは`--remote`時に生成済み`.wrangler.production.json`を使います。
+ローカル用`wrangler.jsonc`には仮のD1 IDを残しています。本番設定はActionsがTerraformの適用済みoutputから生成するため、仮IDを本番へ使いません。運営用CLIで本番を操作する端末では、認証情報とR2 bucket名を環境変数に設定し、`node scripts/prepare-backend.ts`と`terraform -chdir=infra init -backend-config=backend.tfbackend.json`の後に`npm run deploy:prepare`を実行してください。CLIは`--remote`時に生成済み`.wrangler.production.json`を使います。
 
 ## CI/CD
 
 - PRとmainへのpushでLint・フォーマットチェック・テスト・型チェック・フロント/Workerのビルドを実行します。
-- Terraform導入後は`fmt`と`validate`もCIで検証します。plan/applyはHCP Terraformで行い、applyは管理者が手動で開始します。
+- Terraform導入後は`fmt`と`validate`もCIで検証します。plan/applyはGitHub Actionsの手動実行で行い、確認した保存済みplanを適用します。
 - 本番CDを有効化すると、main pushのCIがすべて成功した後に、同じコミットの成果物を使いD1マイグレーションとアプリ配信を行います。PRは配信しません。
 - `ENABLE_PRODUCTION_DEPLOY`は初回インフラ構築まで未設定にします。CI→Terraform→CDの順で導入でき、CD導入だけで未設定環境へ配信は走りません。
 
