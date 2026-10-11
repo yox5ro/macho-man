@@ -57,7 +57,7 @@
 
 - Workers 1つ、D1 1つを基本構成とする。
 - 運営用CLIはローカルで実行し、Wrangler経由でD1を操作する。
-- Cloudflareの認証情報は保護されたGitHub Environmentのsecrets、GitHubのsecrets、運営者のCLI実行環境で管理する。リポジトリに保存しない。
+- Cloudflareの認証情報は保護されたGitHub Environmentのsecrets、運営者のCLI実行環境で管理する。リポジトリに保存しない。
 - Drizzle KitでSQLマイグレーションを生成し、内容を確認してバージョン管理する。Wranglerでローカル・本番のD1に適用する。
 
 ### CI/CD・構成管理（CDは後続変更で導入）

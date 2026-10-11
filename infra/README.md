@@ -4,7 +4,7 @@ TerraformはGitHub Actionsで実行します。mainから手動でplanを作成�
 
 ## 現状と管理の境界
 
-この変更前のリポジトリにはR2 backend設定がありませんでした。確認時点でGitHub repositoryのsecrets/variables/environmentは未登録です。Cloudflare側の既存bucketは、認証情報がないため確認していません。実bucket・API keyの作成、plan/applyは今回行っていません。
+この変更前のリポジトリにはR2 backend設定がありませんでした。確認時点でGitHub repositoryのsecrets/variables/environmentは未登録です。管理者から`macho-man-tfstate`の作成完了が報告されています。認証情報がないため、bucketの非公開設定と実接続は未検証です。この変更作業ではAPI keyの作成、実plan/applyは行っていません。
 
 | 対象                                                    | 管理                                         |
 | ------------------------------------------------------- | -------------------------------------------- |
@@ -21,7 +21,7 @@ Worker本体resourceはprovider 5.27.0でbetaです。TerraformにWorker version
 ## 1. R2 bootstrap（Cloudflare dashboard）
 
 1. Cloudflareアカウントの実Account IDを確認し、R2を有効化します。R2の利用条件・無料枠・支払い方法登録の要否はdashboardで確認してください。
-2. state専用bucketをStandard、default jurisdictionで作成します。bucket名は任意の未使用名を選び、GitHubの`R2_STATE_BUCKET=macho-man-tfstate`へ登録します。r2.dev public accessはDisabled、Custom Domainも未接続にします。公開URL、アプリのassets bucketと兼用しません。
+2. state専用bucketをStandard、default jurisdictionで作成します。bucket名は`macho-man-tfstate`を使用し、GitHub Variable `R2_STATE_BUCKET`へその名前を登録します。r2.dev public accessはDisabled、Custom Domainも未接続にします。公開URL、アプリのassets bucketと兼用しません。
 3. 対象bucketに限定したR2 S3 API資格情報（Access Key ID/Secret Access Key）を発行します。Terraform用はObject Read & Write（List/Get/Put/Delete、.tflock削除とprivate backupコピーを含む）、CD用は別のObject Read onlyを使用します。backendの資格情報はCloudflare管理用API tokenとは別です。
 4. 作成直後のbucketにはstateがなくても構いません。backendはbucketの存在が必要なため、このbootstrapを最初のTerraform runより先に行います。初回plan/applyは`infra/state.tf`のimport blockで既存bucketをTerraform管理へ取り込み、prevent_destroyとr2.dev無効化を管理します。
 
@@ -38,7 +38,7 @@ R2 bucketをこのbackend自体でゼロから作ろうとするとinitができ
 | Secret R2_ACCESS_KEY_ID          | bucket限定のRead & Write                 | 別キーのRead only                        |
 | Secret R2_SECRET_ACCESS_KEY      | 上のS3 secret                            | 上のS3 secret                            |
 | Secret TERRAFORM_PLAN_PASSPHRASE | 十分に長いランダム値（32byte以上を推奨） | 不要                                     |
-| Variable R2_STATE_BUCKET         | 実bucket名                               | 同じ実bucket名                           |
+| Variable R2_STATE_BUCKET         | macho-man-tfstate                        | macho-man-tfstate                        |
 
 インフラtokenは対象アカウントのWorkers Scripts Edit、D1 Edit、Workers R2 Storage Edit、zone作成・取得/Custom Domainに必要なZone Edit/Read・Workers Routes Edit・DNS Editを付与し、bootstrap後に対象zoneへ範囲を狭めます。R2 S3資格情報はbucketを限定します。CloudflareのAPI tokenはstateを読むだけのCD準備には使わず、アプリ配信時に使います。
 
