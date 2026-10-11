@@ -11,7 +11,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: terraform-production
+  group: production-deploy
   cancel-in-progress: false
 
 jobs:
